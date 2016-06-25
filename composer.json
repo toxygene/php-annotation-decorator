@@ -7,10 +7,10 @@
         }
     ],
     "autoload": {
-        "psr-4": {"Toxygene\\PhpDecoratorAnnotation\\": "src/"}
+        "psr-4": {"Toxygene\\PhpAnnotationDecorator\\": "src/"}
     },
     "autoload-dev": {
-        "psr-4": {"Toxygene\\PhpDecoratorAnnotation\\": "tests/"}
+        "psr-4": {"Toxygene\\PhpAnnotationDecorator\\": "tests/"}
     },
     "require": {
         "doctrine/annotations": "^1.2"
