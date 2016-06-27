@@ -1,25 +1,23 @@
 <?php
 namespace Toxygene\PhpAnnotationDecorator;
 
-use Doctrine\Common\Annotations\Reader;
 use Toxygene\PhpAnnotationDecorator\Annotation\Decorator;
 
-class AnnotationDriver
+class DecorationDriver
 {
+
     /**
-     * @var Reader
+     * @var Registry
      */
-    private $reader;
+    private $registry;
 
     /**
      * Constructor
      *
-     * @param Reader $reader
      * @param Registry $registry
      */
-    public function __construct(Reader $reader, Registry $registry)
+    public function __construct(Registry $registry)
     {
-        $this->reader   = $reader;
         $this->registry = $registry;
     }
 
