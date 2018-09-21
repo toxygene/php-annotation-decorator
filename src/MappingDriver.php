@@ -2,21 +2,20 @@
 namespace Toxygene\PhpAnnotationDecorator;
 
 use AppendIterator;
+use Doctrine\Common\Annotations\DocParser;
 use Doctrine\Common\Annotations\Reader;
-use hanneskod\classtools\Iterator\ClassIterator;
 use IteratorIterator;
+use PhpParser\Error;
+use PhpParser\Node;
+use PhpParser\ParserFactory;
+use PhpParser\PrettyPrinter\Standard;
 use ReflectionClass;
 use Symfony\Component\Finder\Finder;
 use Toxygene\PhpAnnotationDecorator\Annotation\Decorator;
 
 class MappingDriver
 {
-    /**
-     * @var DecorationDriver
-     */
-    private $decorationDriver;
-
-    /**
+   /**
      * @var array
      */
     private $paths;
@@ -27,56 +26,50 @@ class MappingDriver
     private $reader;
 
     /**
-     * @param DecorationDriver $decorationDriver
      * @param Reader $reader
      * @param array $paths
      */
-    public function __construct(DecorationDriver $decorationDriver, Reader $reader, $paths)
+    public function __construct(Reader $reader, $paths)
     {
-        $this->decorationDriver = $decorationDriver;
-        $this->paths            = $paths;
-        $this->reader           = $reader;
+        $this->paths = $paths;
+        $this->reader = $reader;
     }
 
     /**
-     *
+     * Decorate the PHP files
      */
     public function decorate()
     {
-        foreach ($this->getClassMap() as $className => $refClass) {
-            foreach ($this->reader->getClassAnnotations($refClass) as $classAnnotation) {
-                if ($classAnnotation instanceof Decorator) {
-                    foreach ($refClass->getMethods() as $refMethod) {
-                        $this->decorationDriver->decorateMethod($refClass->getName(), $refMethod->getName(), $classAnnotation);
-                    }
-                }
+        foreach ($this->getPhpFiles() as $file) {
+            $code = file_get_contents($file);
+
+            $parser = (new ParserFactory)->create(ParserFactory::PREFER_PHP7);
+            try {
+                $statements = $parser->parse($code);
+            } catch (Error $error) {
+                echo "Parse error: {$error->getMessage()}\n";
+                return;
             }
 
-            foreach ($refClass->getMethods() as $refMethod) {
-                $className  = $refClass->getName();
-                $methodName = $refMethod->getName();
+            $this->decorateStatements($statements);
 
-                foreach ($this->reader->getMethodAnnotations($refMethod) as $methodAnnotation) {
-                    if ($methodAnnotation instanceof Decorator) {
-                        $methodName = $this->decorationDriver->decorateMethod($className, $methodName, $methodAnnotation);
-                    }
-                }
-            }
+            $prettyPrinter = new Standard();
+            echo $prettyPrinter->prettyPrintFile($statements);
         }
     }
 
     /**
-     * @return ReflectionClass[]
+     * @return AppendIterator|ReflectionClass[]
      */
-    public function getClassMap()
+    public function getPhpFiles()
     {
         $iterator = new AppendIterator();
         foreach ($this->paths as $path) {
             $iterator->append(
                 new IteratorIterator(
-                    new ClassIterator(
-                        (new Finder())->in($path)
-                    )
+                    (new Finder())
+                        ->in($path)
+                        ->name('*.php')
                 )
             );
         }
